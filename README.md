@@ -61,6 +61,8 @@ I had to clarify, guide, coax, and inquire about:
 * To specifically request computations/equations around lower/upper bounds and Big O Time/Space Complexity.
 * To define a relavent metaphor - it struggled somewhat until I stated something like "We should think of the query as an invariant. And the dataset but not the rotation."
 
+Far exceeded my initial objective to create a simple POC. Looks like there are some interesting advantages (and trade-offs, pros/cons).
+
 > Below is the pretty stellar write-up that it eventually arrived at.
 
 ### Rotation-Key Paragraph Example
@@ -75,7 +77,8 @@ rotated dataset would bring to the query. The example prints every character
 and its spherical key, then decodes the linked rotation path to verify the
 full paragraph round trip: "THE QUERY STAYS FIXED. THE A TO Z DATASET
 STAYS FIXED. ONLY THE SPHERICAL ROTATION KEY CHANGES." Each printed record
-shows the character and its exact spherical-coordinate hash values.
+shows the character and its spherical-coordinate key values rounded to nine
+decimal places.
 
 This representation pins a sequence relative to this particular dataset,
 tree, and query; it is not encryption or compression. The transformed points
@@ -122,9 +125,11 @@ Thus the typical build-plus-decode time is `O(n log n + m log n)`, with
 `O(n + m)` total storage including the tree, AOT key table, and retained
 rotation path. KD-Tree queries are logarithmic on average in low-dimensional
 well-behaved data, not guaranteed: the nearest-neighbor search can visit all
-`n` points in the worst case. The demo's on-demand encoder also searches the
-value list for each input value; that direct list lookup adds `O(n)` per
-encoded value. Precomputed dictionary keys avoid that repeated scan.
+`n` points in the worst case. The encoder uses a dictionary to look up each
+value's dataset index in expected `O(1)` time. On-demand encoding then
+calculates its spherical rotation key in `O(1)` for fixed 3D coordinates, so
+encoding `m` values is expected `O(m)`. Precomputed dictionary keys also
+encode in expected `O(m)` while avoiding the repeated rotation calculation.
 
 ### Storage Break-Even and Uniform Grid Comparison
 

@@ -1,0 +1,26 @@
+test_aot_rotation_keys_are_unique_for_character_values (test_example.FixedQueryRotationTests.test_aot_rotation_keys_are_unique_for_character_values) ... INFO Precomputed 28 distinct spherical keys for the character dataset.
+ok
+test_character_paragraph_round_trips_through_linked_rotation_keys (test_example.FixedQueryRotationTests.test_character_paragraph_round_trips_through_linked_rotation_keys) ... INFO Round-tripped 95 characters through spherical rotation keys.
+ok
+test_dataset_and_query_remain_unchanged_during_rotation_lookup (test_example.FixedQueryRotationTests.test_dataset_and_query_remain_unchanged_during_rotation_lookup) ... INFO All rotations left the query and indexed points unchanged.
+ok
+test_dataset_contains_alphabet_space_and_period (test_example.FixedQueryRotationTests.test_dataset_contains_alphabet_space_and_period) ... INFO Verified fixed A-Z, space, and period dataset has 28 points.
+ok
+test_dataset_rejects_empty_or_duplicate_values (test_example.FixedQueryRotationTests.test_dataset_rejects_empty_or_duplicate_values) ... ok
+test_distinct_rotation_keys_can_pin_the_same_value (test_example.FixedQueryRotationTests.test_distinct_rotation_keys_can_pin_the_same_value) ... INFO Verified another spherical orientation key pins the same letter.
+ok
+test_precomputed_and_on_demand_keys_encode_identically (test_example.FixedQueryRotationTests.test_precomputed_and_on_demand_keys_encode_identically) ... INFO AOT and on-demand encoding produced the same rotation keys.
+ok
+test_rotation_keys_round_trip_to_their_indexed_values (test_example.FixedQueryRotationTests.test_rotation_keys_round_trip_to_their_indexed_values) ... ok
+test_same_invariant_query_retrieves_different_values_for_different_keys (test_example.FixedQueryRotationTests.test_same_invariant_query_retrieves_different_values_for_different_keys) ... INFO The same invariant query retrieved 'A' then 'B' using different rotation keys.
+ok
+test_uniform_grid_returns_same_value_for_every_orientation (test_example.FixedQueryRotationTests.test_uniform_grid_returns_same_value_for_every_orientation) ... INFO Uniform grid matched all 28 character values without a KD-Tree.
+ok
+test_unsupported_values_are_rejected (test_example.FixedQueryRotationTests.test_unsupported_values_are_rejected) ... ok
+test_word_phrase_round_trips_against_its_fixed_word_dataset (test_example.FixedQueryRotationTests.test_word_phrase_round_trips_against_its_fixed_word_dataset) ... INFO Round-tripped 15 words over 15 distinct fixed word values.
+ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.023s
+
+OK

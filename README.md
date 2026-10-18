@@ -45,6 +45,130 @@ Before we get to some code:
     * These can represent or be a **Hash**.
     * Serve as a **Linked List** (with the data of each Node being a specific **KD-Tree**).
     * It can serve as meta-data indicating the way to uniquely retreive the underlying data of the **KD-Tree** (which is an excellent and efficient data structure with many of the best (and better than the) characteristics of **Binary Search Trees**, **Cube Trees**, etc.)
+* It's unclear to what extent the **Holographic Principle** rears up here. The **Projection**-based approaches I mentioned above can take many forms (a single **KD-Tree** projected onto a **Sphere**, etc.).
+* How an we create a "Morphic Database"?
+    * The **Query** is the invariant. As is the the Data.
+    * The **Mutator** is the rotatability of the Data.
+
+## AI Assist
+
+I asked AI to help me write up a POC in python with perf tests.
+
+I had to clarify, guide, coax, and inquire about:
+* Hashing here means to use spherical coordinates and should be done AOT.
+* To verify across multiple kinds of scenarios: characters, words, sentences, etc. 
+* To define comparisons for performance testing - it had a hard time coming up viable comparison data structures/scenarios.
+* To specifically request computations/equations around lower/upper bounds and Big O Time/Space Complexity.
+* To define a relavent metaphor - it struggled somewhat until I stated something like "We should think of the query as an invariant. And the dataset but not the rotation."
+
+> Below is the pretty stellar write-up that it eventually arrived at.
+
+### Rotation-Key Paragraph Example
+
+The demo builds one fixed dataset containing `A` through `Z`, space, and
+period. Its world-space query `(0, 0, 1)` and indexed dataset remain invariant.
+For each character in the paragraph, a rotation is represented by spherical
+coordinates: rotation angle, axis azimuth, and axis inclination. That triple
+is the orientation key (the "hash"). Applying the inverse orientation to the
+fixed query lets the unchanged KD-Tree retrieve the character that a virtually
+rotated dataset would bring to the query. The example prints every character
+and its spherical key, then decodes the linked rotation path to verify the
+full paragraph round trip: "THE QUERY STAYS FIXED. THE A TO Z DATASET
+STAYS FIXED. ONLY THE SPHERICAL ROTATION KEY CHANGES." Each printed record
+shows the character and its exact spherical-coordinate hash values.
+
+This representation pins a sequence relative to this particular dataset,
+tree, and query; it is not encryption or compression. The transformed points
+are conceptual: the implementation does not mutate the query or rebuild or
+rotate the indexed dataset.
+
+The demo precomputes one canonical orientation key for each supported
+character before encoding (AOT: ahead of time). Encoding then reuses those
+keys instead of solving the character-to-rotation alignment for every
+occurrence. The performance test reports the one-time key-table build cost,
+on-demand versus precomputed encoding time, and the number of repeated
+encodings needed to amortize precomputation for that measured message size.
+This is useful when the same fixed alphabet/index is reused; for one short
+message, include the table-build cost when comparing approaches.
+
+### Word-to-Sentence Example and Complexity
+
+The second performance suite uses a fixed dataset of distinct whole words
+from `WORD_SENTENCE`, assigns each word a point in the same 3D space, and
+encodes the sentence as a sequence of orientation keys. Decoding joins the
+retrieved word values with spaces. It runs the same three lookup comparisons
+as the character suite: Rotational KD-Tree, rotated-array scan, and uniform
+grid/fixed spatial hash. Both suites also report on-demand versus AOT key
+encoding separately from those lookup timings.
+
+SciPy's `KDTree` indexes numeric coordinates rather than arbitrary strings;
+the demo keeps an immutable value table in the same point-index order, so
+each returned nearest-point index resolves to its associated character or
+whole word.
+
+For `n` indexed values, `m` orientation queries, and fixed three-dimensional
+coordinates, the expected complexity of the Rotational KD-Tree path is:
+
+| Operation | Expected time | Worst-case time | Additional space |
+|---|---:|---:|---:|
+| Build balanced KD-Tree | `O(n log n)` | Implementation-dependent | `O(n)` |
+| Apply one inverse rotation | `O(1)` | `O(1)` | `O(1)` |
+| One nearest-neighbor query | `O(log n)` | `O(n)` | `O(1)` |
+| Decode `m` keys after tree build | `O(m log n)` | `O(mn)` | `O(m)` for the linked path |
+| Build AOT keys for `n` values | `O(n)` | `O(n)` | `O(n)` |
+| Encode `m` values with AOT keys | `O(m)` | `O(m)` | `O(m)` for the linked path |
+
+Thus the typical build-plus-decode time is `O(n log n + m log n)`, with
+`O(n + m)` total storage including the tree, AOT key table, and retained
+rotation path. KD-Tree queries are logarithmic on average in low-dimensional
+well-behaved data, not guaranteed: the nearest-neighbor search can visit all
+`n` points in the worst case. The demo's on-demand encoder also searches the
+value list for each input value; that direct list lookup adds `O(n)` per
+encoded value. Precomputed dictionary keys avoid that repeated scan.
+
+### Storage Break-Even and Uniform Grid Comparison
+
+There is no finite capacity in the spherical-coordinate key itself: it stores
+three floating-point rotation values per step. A useful storage comparison is
+against retaining a full rotated copy of the point dataset for every
+orientation. Let `N` be the number of points, `M` the number of orientations,
+`P` the coordinate bytes per point, and `H` the bytes per orientation key
+(24 bytes for three float64 values). Keeping the base dataset and the keys
+uses `N*P + M*H` bytes; retaining all rotated snapshots uses `M*N*P` bytes.
+The keys are smaller when:
+
+```text
+N*P + M*H < M*N*P
+N > M*H / ((M - 1)*P), for M > 1
+```
+
+With one orientation (`M=1`), base plus key is always larger than one full
+dataset snapshot. The storage advantage applies to retaining multiple full
+snapshots, not to a rotate-and-scan implementation that creates one temporary
+array at a time and discards it. These payload estimates also omit KD-Tree
+index nodes, linked-list objects, and allocator overhead; measure resident
+memory for a concrete implementation.
+
+Concrete coordinate-payload examples with `P=24 B` and `H=24 B`:
+
+| Points `N` | Orientations `M` | Base dataset + keys | Retained full snapshots |
+|---:|---:|---:|---:|
+| 1,000 | 100 | 26,400 B | 2,400,000 B |
+| 100,000 | 1,000 | 2,424,000 B | 2,400,000,000 B |
+| 1,000,000 | 100 | 24,002,400 B | 2,400,000,000 B |
+
+There is no fixed hash-bucket capacity; instead, decoding precision must
+preserve a nearest-point margin. If `epsilon` is the total angular/query error
+and `delta_min` is the minimum angular separation between dataset points,
+require `2*epsilon < delta_min`.
+
+Both named performance suites compare a uniform grid (fixed spatial hash)
+with the same invariant query and rotation sequence. The grid bins unchanged
+points into fixed-size 3D cells and expands the search through neighboring
+cells until it can prove no unvisited cell is closer. Expected lookup is near
+`O(1)` when point density and cell size are well behaved, but the exact search
+can degrade to `O(n)` point checks and depends on the number of visited cells.
+The grid is an alternative index, not a different rotation-key representation.
 
 ## Resources and Links
 

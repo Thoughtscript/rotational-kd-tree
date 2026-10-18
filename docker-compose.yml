@@ -1,0 +1,4 @@
+services:
+  kd-tree-example:
+    build:
+      context: ./demo

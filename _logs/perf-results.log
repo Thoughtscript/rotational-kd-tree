@@ -1,0 +1,133 @@
+
+========== INVARIANT-QUERY ROTATION PERFORMANCE TESTS ==========
+Fixed world-space query: (0.0, 0.0, 1.0). The value/point dataset is fixed; only its orientation key varies.
+A) Fixed Rotated KD-Tree: inverse-transform the invariant query and query the unchanged index.
+B) Rotate points + array scan: physically rotate every point into a new temporary array, then search that array around the unchanged query.
+C) Fixed uniform grid: retain points in fixed spatial hash cells; inverse-transform the invariant query and expand neighboring cells until the nearest result is proven.
+Expected complexity for n points and m keys: A) O(n log n) build, O(m log n) expected / O(mn) worst-case lookup; B) O(mn) lookup and O(n) temporary array; C) O(n) grid build, typically near O(m) lookup for bounded cell occupancy / O(mn) worst case.
+All three indexes/point sets require O(n) persistent space.
+The spherical-coordinate triple (angle, axis azimuth, axis inclination) is the rotation key.
+
+
+========== CHARACTER-TO-PARAGRAPH PERFORMANCE TESTS BEGIN ==========
+
+Fixed dataset: 28 distinct values across 28 3D points; invariant query: (0.0, 0.0, 1.0); rotation sequence: 9,500 steps.
+The KD-Tree indexes numeric 3D coordinates; an immutable parallel value table maps each point index to its character or whole word.
+The stored orientation key is the spherical coordinate triple (rotation angle, axis azimuth, axis inclination), precomputed once per supported dataset value and reused for encoding.
+AOT KEY ENCODING COMPARISON: calculate each value's orientation on demand versus reusing a precomputed value-to-key table. Both produce the same linked path.
+A) ROTATED KD-TREE: keep the index and world query fixed; inverse-rotate the query for each lookup.
+B) ROTATED ARRAY: allocate a rotated copy of all 28 value points for each step, then scan for the fixed query.
+C) UNIFORM GRID / FIXED SPATIAL HASH: bucket the unchanged points into 0.25-unit 3D cells; inverse-rotate the query and search neighboring buckets outward until no unvisited cell can contain a closer point. This uses no KD-Tree.
+All three methods use the same rotation sequence and must return the same value sequence.
+AOT key preparation and message encoding (median):
+  Build fixed dataset/tree:       0.000027 s
+  D) Precompute 28 unique value keys once: 0.002914 s
+  D) Encode 9,500 values, calculating each key: 0.362224 s
+  D) Encode 9,500 values, reusing AOT keys: 0.002593 s
+  D) AOT precompute + one encoding: 0.005506 s
+  D) Encoding-only speedup after precompute: 139.70x
+  D) Precompute amortizes after about 1 encoding(s) of this sequence length.
+  D) Best for one encoding including setup: AOT precompute + encode.
+  D) Best after table is built and reused: AOT precomputed keys.
+MEASURED ELAPSED TIME (median of 5 runs)
+  A) Build Rotated KD-Tree once:          0.000008 s
+  A) Inverse-query + Rotated KD-Tree:     0.206285 s
+  A) Build + query total:                 0.206294 s
+  B) Rotate array + scan:                 0.119268 s
+  C) Build uniform grid once:             0.000018 s
+  C) Inverse-query + grid lookups:        0.322587 s
+  C) Build + query total:                 0.322605 s
+All three returned the exact same sequence.
+Fastest lookup for this scenario: B) Rotate points + array scan.
+Rotated KD-Tree complexity (fixed 3D space, n indexed values, m orientation queries):
+  Build: O(n log n) expected time and O(n) index space for a balanced tree.
+  One inverse rotation: O(1); one nearest-neighbor lookup: O(log n) expected in low dimensions, O(n) worst case.
+  m lookups: O(m log n) expected, O(mn) worst case; including construction: O(n log n + m log n) expected.
+  AOT key table: O(n) build time and O(n) space; encoding m values with precomputed keys: O(m) plus O(m) path storage.
+Storage payload comparison (object/index overhead excluded):
+Rotation-sequence storage payload (object overhead excluded)
+  Encoded values' UTF-8 payload:  9,500 B
+  Three float64 coordinates/step: 24 B
+  Linked path rotation keys:      228,000 B
+  AOT lookup table payload:       28 keys x 24 B = 672 B
+  Spherical coordinates are orientation keys, not cryptographic hashes or compression.
+Dataset/key storage break-even (payload only):
+  Retain the base dataset plus orientation keys instead of one full rotated point snapshot per step when:
+    N*P + M*H < M*N*P
+  Equivalent for M>1: N > M*H / ((M-1)*P) = 1.000 points.
+  This run: N=28, M=9500, P=24 B, H=24 B.
+  Base + keys: 228,672 B; M snapshots: 6,384,000 B.
+  Snapshot-storage break-even threshold: N > 1.000 points. This compares full rotated point snapshots, not compact strings of values.
+  Concrete payload comparisons (base + keys vs. M full snapshots):
+    N=1,000, M=100: 25.78 KiB vs. 2.29 MiB (90.9x less payload).
+    N=100,000, M=1,000: 2.31 MiB vs. 2.24 GiB (990.1x less payload).
+    N=1,000,000, M=100: 22.89 MiB vs. 2.24 GiB (100.0x less payload).
+  Excludes index nodes, linked-list objects, lookup tables, and allocator overhead; measure process memory for real deployments.
+  Orientation-key capacity is limited by precision, not a finite hash space. To preserve nearest-neighbor identity, total angular/query error ε should satisfy 2ε < δ_min, the minimum point separation.
+  C) Uniform grid: O(n) build and O(n + g) space for point indices and g occupied buckets; expected near O(1) query under bounded density, worst-case O(n) point checks.
+     Outward cell search is exact; cost depends on cells visited (cell width 0.25).
+
+BEST FOR THIS MEASURED LOOKUP: B) Rotate points + array scan (0.119268 s total including index construction where applicable).
+This timing is specific to the dataset size and machine; the invariant query and indexed data remain unchanged.
+
+
+========== WORD-TO-SENTENCE PERFORMANCE TESTS BEGIN ==========
+
+Fixed dataset: 15 distinct values across 15 3D points; invariant query: (0.0, 0.0, 1.0); rotation sequence: 1,500 steps.
+The KD-Tree indexes numeric 3D coordinates; an immutable parallel value table maps each point index to its character or whole word.
+The stored orientation key is the spherical coordinate triple (rotation angle, axis azimuth, axis inclination), precomputed once per supported dataset value and reused for encoding.
+AOT KEY ENCODING COMPARISON: calculate each value's orientation on demand versus reusing a precomputed value-to-key table. Both produce the same linked path.
+A) ROTATED KD-TREE: keep the index and world query fixed; inverse-rotate the query for each lookup.
+B) ROTATED ARRAY: allocate a rotated copy of all 15 value points for each step, then scan for the fixed query.
+C) UNIFORM GRID / FIXED SPATIAL HASH: bucket the unchanged points into 0.25-unit 3D cells; inverse-rotate the query and search neighboring buckets outward until no unvisited cell can contain a closer point. This uses no KD-Tree.
+All three methods use the same rotation sequence and must return the same value sequence.
+AOT key preparation and message encoding (median):
+  Build fixed dataset/tree:       0.000019 s
+  D) Precompute 15 unique value keys once: 0.000579 s
+  D) Encode 1,500 values, calculating each key: 0.056037 s
+  D) Encode 1,500 values, reusing AOT keys: 0.000279 s
+  D) AOT precompute + one encoding: 0.000857 s
+  D) Encoding-only speedup after precompute: 201.09x
+  D) Precompute amortizes after about 1 encoding(s) of this sequence length.
+  D) Best for one encoding including setup: AOT precompute + encode.
+  D) Best after table is built and reused: AOT precomputed keys.
+MEASURED ELAPSED TIME (median of 5 runs)
+  A) Build Rotated KD-Tree once:          0.000008 s
+  A) Inverse-query + Rotated KD-Tree:     0.032860 s
+  A) Build + query total:                 0.032868 s
+  B) Rotate array + scan:                 0.018909 s
+  C) Build uniform grid once:             0.000010 s
+  C) Inverse-query + grid lookups:        0.042940 s
+  C) Build + query total:                 0.042950 s
+All three returned the exact same sequence.
+Fastest lookup for this scenario: B) Rotate points + array scan.
+Rotated KD-Tree complexity (fixed 3D space, n indexed values, m orientation queries):
+  Build: O(n log n) expected time and O(n) index space for a balanced tree.
+  One inverse rotation: O(1); one nearest-neighbor lookup: O(log n) expected in low dimensions, O(n) worst case.
+  m lookups: O(m log n) expected, O(mn) worst case; including construction: O(n log n + m log n) expected.
+  AOT key table: O(n) build time and O(n) space; encoding m values with precomputed keys: O(m) plus O(m) path storage.
+Storage payload comparison (object/index overhead excluded):
+Rotation-sequence storage payload (object overhead excluded)
+  Encoded values' UTF-8 payload:  8,200 B
+  Three float64 coordinates/step: 24 B
+  Linked path rotation keys:      36,000 B
+  AOT lookup table payload:       15 keys x 24 B = 360 B
+  Spherical coordinates are orientation keys, not cryptographic hashes or compression.
+Dataset/key storage break-even (payload only):
+  Retain the base dataset plus orientation keys instead of one full rotated point snapshot per step when:
+    N*P + M*H < M*N*P
+  Equivalent for M>1: N > M*H / ((M-1)*P) = 1.001 points.
+  This run: N=15, M=1500, P=24 B, H=24 B.
+  Base + keys: 36,360 B; M snapshots: 540,000 B.
+  Snapshot-storage break-even threshold: N > 1.001 points. This compares full rotated point snapshots, not compact strings of values.
+  Concrete payload comparisons (base + keys vs. M full snapshots):
+    N=1,000, M=100: 25.78 KiB vs. 2.29 MiB (90.9x less payload).
+    N=100,000, M=1,000: 2.31 MiB vs. 2.24 GiB (990.1x less payload).
+    N=1,000,000, M=100: 22.89 MiB vs. 2.24 GiB (100.0x less payload).
+  Excludes index nodes, linked-list objects, lookup tables, and allocator overhead; measure process memory for real deployments.
+  Orientation-key capacity is limited by precision, not a finite hash space. To preserve nearest-neighbor identity, total angular/query error ε should satisfy 2ε < δ_min, the minimum point separation.
+  C) Uniform grid: O(n) build and O(n + g) space for point indices and g occupied buckets; expected near O(1) query under bounded density, worst-case O(n) point checks.
+     Outward cell search is exact; cost depends on cells visited (cell width 0.25).
+
+BEST FOR THIS MEASURED LOOKUP: B) Rotate points + array scan (0.018909 s total including index construction where applicable).
+This timing is specific to the dataset size and machine; the invariant query and indexed data remain unchanged.

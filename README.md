@@ -4,7 +4,7 @@ So I was mindlessly, listlessly, doomscrolling on Youtube when I encountered [th
 
 1. Can **Quadtrees** be extended to the three dimensions? A forest of Quadtrees ("forests" of tree-graphs are a useful metaphor in many famous algorithms).
 1. Can we exploit something like **Polar Coordinates** (or, better [paths](./000000000138) on the surface of a **Sphere**) to help optimize or fix the projected quadrant that some piece of data would reside in?
-1. How efficiently can we reuse data by rotating or transforming data within a "Cubetrees"?
+1. How efficiently can we reuse data by rotating or transforming data within a "Cubetree"?
 
 ## Initial Thoughts
 

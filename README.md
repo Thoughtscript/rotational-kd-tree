@@ -46,9 +46,10 @@ Before we get to some code:
     * Serve as a **Linked List** (with the data of each Node being a specific **KD-Tree**).
     * It can serve as meta-data indicating the way to uniquely retreive the underlying data of the **KD-Tree** (which is an excellent and efficient data structure with many of the best (and better than the) characteristics of **Binary Search Trees**, **Cube Trees**, etc.)
 * It's unclear to what extent the **Holographic Principle** rears up here. The **Projection**-based approaches I mentioned above can take many forms (a single **KD-Tree** projected onto a **Sphere**, etc.).
-* How an we create a "Morphic Database"?
+* How can we create a "Morphic Database"?
     * The **Query** is the invariant. As is the the Data.
     * The **Mutator** is the rotatability of the Data.
+    * This a Database that mutates itself to fit an unchanging **Query** rather than a **Query** being specifically written to retrieve data from the Database.
 
 ## AI Assist
 

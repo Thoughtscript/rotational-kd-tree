@@ -8,7 +8,7 @@ So I was mindlessly, listlessly, doomscrolling on Youtube when I encountered [th
 
 ## Initial Thoughts
 
-> So, I learned about **KD-**, and **Ball Trees** but didn't really find anything about using three-dimensional **K-D Tree** within a **Sphere** (whose corners intersect the surface of the **Sphere**). Might just be ignorant here.
+> So, I learned about **KD-**, and **Ball Trees** but didn't really find anything about using three-dimensional **K-D Trees** within a **Sphere** (whose corners intersect the surface of the **Sphere**). Might just be ignorant here.
 
 There are some probably fairly mundane observations here (but maybe not so obvious to me):
 1. The **Rotational Group** for the interior **Cube** (being rotated in every which way about the same origin) forms the same enclosing **Sphere**.
@@ -16,7 +16,7 @@ There are some probably fairly mundane observations here (but maybe not so obvio
 1. If so, then there are some potential advantages. 
     * We can build a metaphorical **K-D Tree** *forest* out of a *single* three-dimensional **K-D Tree**.
     * We could potentially use **Polar Coordinates** to fix which **Rotation** we intend to use.
-    * We can potentially embed into those **Polar Coordinates** a cipher or other data transformation function to have the original **Cube** do multiple-duty - reusing a finite data set in an infinite number of useful ways (think of an **Alphabet** with a fix number of charcters that can be mapped to an infinite number of combinations resulting in words, sentences, phrases).
+    * We can potentially embed into those **Polar Coordinates** a cipher or other data transformation function to have the original **Cube** do multiple-duty - reusing a finite data set in an infinite number of useful ways (think of an **Alphabet** with a fix number of characters that can be mapped to an infinite number of combinations resulting in words, sentences, phrases).
     * These need not be **Polar Coordinates** alone, they can be a path to allow greater flexibility in retrieving and encoding data.
 
 I had ChatGPT generate a GIF since I couldn't find one to illustrate this point:
@@ -49,7 +49,7 @@ Before we get to some code:
 * How can we create a "Morphic Database"?
     * The **Query** is the invariant. As is the the Data.
     * The **Mutator** is the rotatability of the Data.
-    * This a Database that mutates itself to fit an unchanging **Query** rather than a **Query** being specifically written to retrieve data from the Database.
+    * This is a Database that mutates itself to fit an unchanging **Query** rather than a **Query** being specifically written to retrieve data from the Database.
 
 ## AI Assist
 
